@@ -10,8 +10,9 @@ data:
   start_month: 1
   end_year: 2025
   end_month: 1
-  target_threshold: 0.15
+  target_threshold: 0.20
   target_operator: gt
+  missing_arr_del15_policy: zero
   test_size: 0.20
   temporal_train_end_year: 2023
   temporal_test_start_year: 2024

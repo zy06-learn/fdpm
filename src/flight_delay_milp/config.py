@@ -26,6 +26,8 @@ def validate_config(config: dict[str, Any]) -> None:
     threshold = float(config["data"].get("target_threshold", -1))
     if not 0 < threshold < 1:
         raise ValueError("target_threshold must be between zero and one.")
+    if config["data"].get("missing_arr_del15_policy") not in {"drop", "zero"}:
+        raise ValueError("missing_arr_del15_policy must be 'drop' or 'zero'.")
     capacity = float(config["optimization"].get("capacity", -1))
     if not 0 < capacity <= 1:
         raise ValueError("optimization.capacity must be in (0, 1].")

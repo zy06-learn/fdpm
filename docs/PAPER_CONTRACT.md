@@ -12,7 +12,7 @@ Section names refer to the paper rather than to an unpublished source path.
 | Date boundary | January 2005-January 2025 | Inclusive filter in `configs/paper.yaml` |
 | Raw schema | 21 columns | Canonical lower-case schema is validated |
 | Raw count | 372,765 | Reported as a validation target, never forced |
-| Valid count | 372,130 after `arr_flights > 0` | Applied before target construction |
+| Valid count | 372,130 after valid positive `arr_flights` | Applied before target construction |
 | Main split | Stratified 80/20, seed 42 | `train_test_split` on the aggregate target |
 | Balancing | Random undersampling on training only | Test distribution remains untouched |
 | Temporal split | 2005-2023 train, 2024-2025 test | Separate formal arm |
@@ -22,15 +22,28 @@ Section names refer to the paper rather than to an unpublished source path.
 The dataset description defines a positive aggregate unit when more than 15% of its
 arrivals were delayed by at least 15 minutes. A later equation instead defines a
 single-flight indicator. The source table contains counts (`arr_del15`, `arr_flights`),
-not individual flight outcomes. The primary reproducible target is therefore:
+not individual flight outcomes, so the target must be an aggregate delay rate.
+
+The official full-range export gives 372,765 raw rows. Applying the prose threshold
+strictly while dropping missing outcome counts gives 371,837 valid rows and a 63.6881%
+positive rate, contradicting every reported split and class-count table. In contrast,
+retaining the 293 blank `arr_del15` cells as zero-delay counts and using a strict 20%
+threshold reproduces all reported counts exactly: 372,130 valid rows; 211,064/161,066
+total class counts; 168,851/128,853 training counts; 42,213/32,213 test counts; and
+257,706 samples after training-only undersampling. The 293 blank-count rows also have
+zero `arr_delay` and zero delay-cause counts in the official export. The report-faithful
+formal target is therefore:
 
 ```text
+arr_del15 = 0 when its count is blank
 delay_rate = arr_del15 / arr_flights
-target = 1 if delay_rate > 0.15 else 0
+target = 1 if delay_rate > 0.20 else 0
 ```
 
-The strict `>` operator follows the prose phrase “more than 15%”. The target rule and
-threshold are versioned configuration values.
+The strict `>` operator follows the prose phrase “more than”. The 20% threshold is an
+evidence-backed reconstruction of the experiment that produced the paper's tables,
+not a claim that the paper's 15% prose is correct. The missing-count policy, target
+rule and threshold are versioned configuration values.
 
 ## Leakage boundary
 

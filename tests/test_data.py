@@ -4,7 +4,9 @@ from math import ceil
 
 import numpy as np
 import pandas as pd
+import pytest
 
+from flight_delay_milp.config import load_config
 from flight_delay_milp.data import (
     FEATURE_COLUMNS,
     discover_data_files,
@@ -22,8 +24,9 @@ def data_config() -> dict:
         "start_month": 1,
         "end_year": 2025,
         "end_month": 1,
-        "target_threshold": 0.15,
+        "target_threshold": 0.20,
         "target_operator": "gt",
+        "missing_arr_del15_policy": "zero",
     }
 
 
@@ -41,14 +44,53 @@ def test_target_is_strict_aggregate_delay_rate() -> None:
             "carrier": ["AA", "AA", "AA"],
             "airport": ["ATL", "ATL", "ATL"],
             "arr_flights": [100, 100, 0],
-            "arr_del15": [15, 16, 0],
+            "arr_del15": [20, 21, 0],
         }
     )
     prepared, summary = prepare_dataset(raw, data_config())
     assert prepared["target"].tolist() == [0, 1]
-    assert prepared["delay_rate"].tolist() == [0.15, 0.16]
+    assert prepared["delay_rate"].tolist() == [0.20, 0.21]
     assert summary.raw_rows == 3
     assert summary.valid_rows == 2
+
+
+def test_missing_delay_count_is_zero_under_paper_policy() -> None:
+    raw = pd.DataFrame(
+        {
+            "year": [2024, 2024],
+            "month": [1, 1],
+            "carrier": ["AA", "AA"],
+            "airport": ["ATL", "ATL"],
+            "arr_flights": [10, 10],
+            "arr_del15": [np.nan, 3],
+        }
+    )
+    prepared, summary = prepare_dataset(raw, data_config())
+    assert prepared["arr_del15"].tolist() == [0, 3]
+    assert prepared["target"].tolist() == [0, 1]
+    assert summary.valid_rows == 2
+
+
+def test_missing_delay_count_rejects_positive_delay_evidence() -> None:
+    raw = pd.DataFrame(
+        {
+            "year": [2024],
+            "month": [1],
+            "carrier": ["AA"],
+            "airport": ["ATL"],
+            "arr_flights": [10],
+            "arr_del15": [np.nan],
+            "arr_delay": [15],
+        }
+    )
+    with pytest.raises(ValueError, match="conflicts with positive delay evidence"):
+        prepare_dataset(raw, data_config())
+
+
+def test_paper_config_freezes_report_faithful_target() -> None:
+    config = load_config("configs/paper.yaml")
+    assert config["data"]["target_threshold"] == 0.20
+    assert config["data"]["missing_arr_del15_policy"] == "zero"
 
 
 def test_feature_boundary_excludes_outcomes() -> None:

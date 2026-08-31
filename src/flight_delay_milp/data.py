@@ -129,7 +129,35 @@ def prepare_dataset(frame: pd.DataFrame, config: dict) -> tuple[pd.DataFrame, Da
     prepared = frame.copy()
     for column in ("year", "month", "arr_flights", "arr_del15"):
         prepared[column] = pd.to_numeric(prepared[column], errors="coerce")
-    prepared = prepared.dropna(subset=sorted(required))
+    essential = ["year", "month", "carrier", "airport", "arr_flights"]
+    prepared = prepared.dropna(subset=essential)
+    if config["missing_arr_del15_policy"] == "zero":
+        missing_delay_count = prepared["arr_del15"].isna()
+        delay_evidence = [
+            column
+            for column in (
+                "arr_delay",
+                "carrier_ct",
+                "weather_ct",
+                "nas_ct",
+                "security_ct",
+                "late_aircraft_ct",
+            )
+            if column in prepared
+        ]
+        if missing_delay_count.any() and delay_evidence:
+            conflicting = (
+                prepared.loc[missing_delay_count, delay_evidence]
+                .apply(pd.to_numeric, errors="coerce")
+                .fillna(0)
+                .gt(0)
+                .any(axis=1)
+            )
+            if conflicting.any():
+                raise ValueError("Blank arr_del15 conflicts with positive delay evidence.")
+        prepared["arr_del15"] = prepared["arr_del15"].fillna(0)
+    else:
+        prepared = prepared.dropna(subset=["arr_del15"])
     prepared = prepared.loc[prepared["arr_flights"] > 0].copy()
     prepared = filter_period(prepared, config)
     if prepared.empty:

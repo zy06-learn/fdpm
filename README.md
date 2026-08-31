@@ -22,8 +22,10 @@ decisions:
   penalty USD 2,000; capacity 60%; and temporal validation on 2005-2023 versus
   2024-2025.
 - **Resolved contradiction:** each source row is a carrier-airport-month aggregate,
-  so the primary target is `arr_del15 / arr_flights > 0.15`, as stated in the paper's
-  dataset description. It is not an individual-flight `ArrDel15` indicator.
+  so the target is a ratio rather than an individual-flight indicator. Although the
+  prose says 15%, the paper's complete sample, split and class-count tables are
+  reproduced exactly only by `arr_del15 / arr_flights > 0.20`; the formal contract
+  therefore uses 20% and records the 15% definition as a sensitivity discrepancy.
 - **Explicit reconstruction choices:** model hyperparameters, scenario grid,
   commercial-value seed, mandatory-unit seed, and the baseline implementation are in
   versioned YAML rather than hidden in code.
@@ -72,9 +74,12 @@ Validate the raw export before a formal run:
 ./reproduce.sh validate-data data/raw
 ```
 
-Expected paper counts are 372,765 raw rows, 372,130 rows after removing
-`arr_flights <= 0`, and a 43.28% positive rate. Validation reports discrepancies; it
-does not silently force the data to match.
+Expected paper counts are 372,765 raw rows, 372,130 rows after removing records with
+missing or non-positive `arr_flights`, and a 43.28% positive rate. In the official
+export, 293 retained rows have a blank `arr_del15` alongside zero arrival-delay
+minutes and zero delay-cause counts, so the versioned paper contract interprets those
+blank counts as zero. Validation reports discrepancies; it does not silently force
+the data to match.
 
 ## Formal reproduction
 
