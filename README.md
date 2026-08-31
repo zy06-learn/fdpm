@@ -98,6 +98,36 @@ The formal benchmark can take substantially longer than the smoke run because it
 fits all 11 models and a nested 5-fold stack on roughly 258k balanced training rows.
 Run it only after approving the machine and runtime envelope.
 
+## Nested-CV tuning enhancement
+
+The versioned tuning contract adds 3x3 stratified nested cross-validation for all 11
+models. Candidate selection first forms the one-standard-error ROC-AUC band and then
+chooses the lowest-Brier candidate inside that band. XGBoost, LightGBM and CatBoost
+use a training-only early-stopping split (2,000-round ceiling, patience 50), and the
+stack is rebuilt from tuned boosting bases with 5-fold out-of-fold meta-features.
+
+Exercise every path on a stratified 12k sample of the official balanced training
+partition without scoring the held-out test set:
+
+```bash
+./reproduce.sh tuning-smoke data/raw
+```
+
+Run the full frozen contract, or resume an interrupted run from its immutable
+checkpoint directory:
+
+```bash
+./reproduce.sh tune data/raw
+./reproduce.sh tune data/raw artifacts/tuning/RUN_DIRECTORY
+```
+
+The test partition is not scored until `best_parameters.json` and
+`TUNING_DONE.json` bind the final parameter hash to the exact held-out index hash.
+Outer-fold, final-selection and per-model test checkpoints make the run resumable.
+Because the same held-out partition was already inspected in the baseline formal
+reproduction, this enhancement is confirmatory replication evidence, not a fresh
+independent generalization estimate.
+
 ## Repository layout
 
 ```text
@@ -122,4 +152,5 @@ global Homebrew dependency.
 
 Tests cover schema normalization, aggregate target construction, leakage exclusions,
 training-only balancing, metrics, capacity and structural MILP feasibility, BTS URL
-validation, and immutable run directories.
+validation, immutable run directories, deterministic search, nested-CV selection,
+tuned stacking, parameter freezing, one-time test unlocking, and checkpoint resume.
