@@ -41,6 +41,15 @@ def test_candidate_sampling_is_deterministic_and_bounded() -> None:
     assert len({json.dumps(item, sort_keys=True) for item in first}) == 8
 
 
+def test_candidate_sampling_rejects_invalid_requests() -> None:
+    with pytest.raises(ValueError, match="positive"):
+        deterministic_candidates("random_forest", seed=42, budget=0)
+    with pytest.raises(ValueError, match="exceeds"):
+        deterministic_candidates("gaussian_nb", seed=42, budget=14)
+    with pytest.raises(ValueError, match="Unknown model"):
+        deterministic_candidates("not_a_model", seed=42, budget=1)
+
+
 @pytest.mark.parametrize("model_name", MODEL_NAMES)
 def test_every_paper_model_has_a_search_space(model_name: str) -> None:
     assert deterministic_candidates(model_name, seed=42, budget=1)
