@@ -1,0 +1,81 @@
+run:
+  kind: tuning_smoke
+  seed: 42
+  output_root: artifacts/tuning-smoke
+  save_all_models: false
+
+data:
+  synthetic: false
+  start_year: 2005
+  start_month: 1
+  end_year: 2025
+  end_month: 1
+  target_threshold: 0.20
+  target_operator: gt
+  missing_arr_del15_policy: zero
+  test_size: 0.20
+  temporal_train_end_year: 2023
+  temporal_test_start_year: 2024
+  expected_raw_rows: 372765
+  expected_valid_rows: 372130
+  expected_positive_rate: 0.4328
+
+models:
+  names:
+    - random_forest
+    - extra_trees
+    - xgboost
+    - lightgbm
+    - catboost
+    - knn
+    - gaussian_nb
+    - mlp
+    - logistic_regression
+    - linear_svm
+    - stacking
+  selected: stacking
+  fast: true
+  n_jobs: 1
+  stack_folds: 2
+
+evaluation:
+  threshold: 0.5
+  calibration_bins: 8
+  bootstrap_samples: 10
+  run_temporal_arm: false
+
+optimization:
+  penalty: 2000.0
+  capacity: 0.60
+  commercial_value_low: 1000
+  commercial_value_high: 5000
+  value_seed: 42
+  mandatory_fraction: 0.05
+  mandatory_seed: 42
+  carrier_min_fraction: 0.40
+  solver_time_limit_seconds: 60
+  scenario_penalties: [2000.0]
+  scenario_capacities: [0.60]
+
+tuning:
+  outer_folds: 2
+  inner_folds: 2
+  stack_oof_folds: 2
+  n_jobs: 1
+  model_threads: 1
+  max_boost_rounds: 20
+  early_stopping_patience: 5
+  sample_rows: 12000
+  smoke_fast: true
+  budgets:
+    random_forest: 1
+    extra_trees: 1
+    xgboost: 1
+    lightgbm: 1
+    catboost: 1
+    knn: 1
+    gaussian_nb: 1
+    mlp: 1
+    logistic_regression: 1
+    linear_svm: 1
+    stacking: 1

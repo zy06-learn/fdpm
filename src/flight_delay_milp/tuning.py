@@ -319,7 +319,8 @@ def _fit_boost_with_early_stopping(
         estimator.fit(
             transformed_fit,
             y_fit,
-            eval_set=[(transformed_stop, y_stop)],
+            eval_X=transformed_stop,
+            eval_y=y_stop,
             callbacks=[early_stopping(early_stopping_patience, verbose=False)],
         )
         best_iteration = int(estimator.best_iteration_)

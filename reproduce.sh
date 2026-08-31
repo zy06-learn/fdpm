@@ -15,7 +15,7 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
 fi
 
 usage() {
-  echo "Usage: $0 {test|smoke|validate-data PATH|formal PATH}"
+  echo "Usage: $0 {test|smoke|tuning-smoke PATH|tune PATH [RUN_DIR]|validate-data PATH|formal PATH}"
 }
 
 command_name="${1:-}"
@@ -26,6 +26,20 @@ case "$command_name" in
     ;;
   smoke)
     uv run flight-delay-milp run --config configs/smoke.yaml
+    ;;
+  tuning-smoke)
+    test "$#" -eq 2 || { usage; exit 2; }
+    uv run flight-delay-milp tune --config configs/tuning_smoke.yaml --input "$2"
+    ;;
+  tune)
+    if [[ "$#" -eq 2 ]]; then
+      uv run flight-delay-milp tune --config configs/tuning.yaml --input "$2"
+    elif [[ "$#" -eq 3 ]]; then
+      uv run flight-delay-milp tune --config configs/tuning.yaml --input "$2" --resume-run "$3"
+    else
+      usage
+      exit 2
+    fi
     ;;
   validate-data)
     test "$#" -eq 2 || { usage; exit 2; }

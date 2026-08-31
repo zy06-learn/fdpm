@@ -31,3 +31,19 @@ def validate_config(config: dict[str, Any]) -> None:
     capacity = float(config["optimization"].get("capacity", -1))
     if not 0 < capacity <= 1:
         raise ValueError("optimization.capacity must be in (0, 1].")
+
+    if str(config["run"].get("kind", "")).startswith("tuning"):
+        tuning = config.get("tuning")
+        if not isinstance(tuning, dict):
+            raise ValueError("Missing configuration section: tuning")
+        for key in ("outer_folds", "inner_folds", "stack_oof_folds"):
+            if int(tuning.get(key, 0)) < 2:
+                raise ValueError(f"tuning.{key} must be at least two.")
+        if int(tuning.get("n_jobs", 0)) < 1 or int(tuning.get("model_threads", 0)) < 1:
+            raise ValueError("Tuning parallelism must use positive worker counts.")
+        budgets = tuning.get("budgets")
+        if not isinstance(budgets, dict):
+            raise ValueError("tuning.budgets must be a mapping.")
+        missing_budgets = sorted(set(config["models"]["names"]) - set(budgets))
+        if missing_budgets:
+            raise ValueError(f"Missing tuning budgets: {missing_budgets}")

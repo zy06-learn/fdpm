@@ -27,6 +27,11 @@ def build_parser() -> argparse.ArgumentParser:
     run = subparsers.add_parser("run", help="Run a smoke or formal experiment contract.")
     run.add_argument("--config", type=Path, required=True)
     run.add_argument("--input", type=Path)
+
+    tune = subparsers.add_parser("tune", help="Run or resume the frozen nested-CV contract.")
+    tune.add_argument("--config", type=Path, required=True)
+    tune.add_argument("--input", type=Path)
+    tune.add_argument("--resume-run", type=Path)
     return parser
 
 
@@ -47,6 +52,14 @@ def main() -> None:
         from .run import run_experiment
 
         run_dir = run_experiment(load_config(args.config), args.input)
+        print(run_dir.resolve())
+        return
+    if args.command == "tune":
+        from .tuning_run import run_tuning_experiment
+
+        run_dir = run_tuning_experiment(
+            load_config(args.config), args.input, resume_run=args.resume_run
+        )
         print(run_dir.resolve())
         return
     raise AssertionError(f"Unhandled command: {args.command}")

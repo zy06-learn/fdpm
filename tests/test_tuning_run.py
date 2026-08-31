@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pandas as pd
+
 from flight_delay_milp.cli import build_parser
+from flight_delay_milp.config import load_config
 from flight_delay_milp.tuning import MODEL_NAMES, parameters_sha256
 from flight_delay_milp.tuning_run import indices_sha256, run_tuning_experiment
 
@@ -92,6 +95,28 @@ def test_test_index_hash_is_order_sensitive_and_deterministic() -> None:
     assert indices_sha256([4, 2, 8]) != indices_sha256([2, 4, 8])
 
 
+def test_formal_tuning_config_matches_approved_protocol() -> None:
+    config = load_config("configs/tuning.yaml")
+    tuning = config["tuning"]
+    assert (tuning["outer_folds"], tuning["inner_folds"]) == (3, 3)
+    assert tuning["stack_oof_folds"] == 5
+    assert (tuning["max_boost_rounds"], tuning["early_stopping_patience"]) == (2000, 50)
+    assert (tuning["n_jobs"], tuning["model_threads"]) == (8, 1)
+    assert tuning["budgets"] == {
+        "random_forest": 16,
+        "extra_trees": 16,
+        "xgboost": 20,
+        "lightgbm": 20,
+        "catboost": 20,
+        "knn": 20,
+        "gaussian_nb": 13,
+        "mlp": 16,
+        "logistic_regression": 13,
+        "linear_svm": 13,
+        "stacking": 13,
+    }
+
+
 def test_tuning_smoke_freezes_params_without_scoring_test_and_resumes(tmp_path: Path) -> None:
     config = _smoke_config(tmp_path / "tuning-smoke")
     run_dir = run_tuning_experiment(config)
@@ -112,3 +137,26 @@ def test_tuning_smoke_freezes_params_without_scoring_test_and_resumes(tmp_path: 
     assert resumed == run_dir
     assert (run_dir / "SMOKE_DONE.json").read_text(encoding="utf-8") == marker_before
 
+    freeze_before = (run_dir / "TUNING_DONE.json").read_text(encoding="utf-8")
+    (run_dir / "SMOKE_DONE.json").unlink()
+    resumed_partial = run_tuning_experiment(config, resume_run=run_dir)
+    assert resumed_partial == run_dir
+    assert (run_dir / "SMOKE_DONE.json").is_file()
+    assert (run_dir / "TUNING_DONE.json").read_text(encoding="utf-8") == freeze_before
+
+
+def test_tiny_formal_run_unlocks_one_test_evaluation_after_freeze(tmp_path: Path) -> None:
+    config = _smoke_config(tmp_path / "tuning-formal")
+    config["run"]["kind"] = "tuning"
+    run_dir = run_tuning_experiment(config)
+
+    freeze = json.loads((run_dir / "TUNING_DONE.json").read_text(encoding="utf-8"))
+    metrics = pd.read_csv(run_dir / "test_model_metrics.csv")
+
+    assert freeze["test_scoring_locked"] is False
+    assert set(metrics["model"]) == set(MODEL_NAMES)
+    assert len(list((run_dir / "checkpoints" / "test").glob("*.json"))) == 11
+    assert (run_dir / "random_split_optimization_strategies.csv").is_file()
+    assert (run_dir / "model_stacking.joblib").is_file()
+    assert (run_dir / "DONE.json").is_file()
+    assert not (run_dir / "SMOKE_DONE.json").exists()
