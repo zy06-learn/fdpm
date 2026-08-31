@@ -1,0 +1,18 @@
+.DS_Store
+.venv/
+.native/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Data and experiment artifacts are reproducible, potentially large, and must
+# never be committed.
+data/raw/*
+data/processed/*
+artifacts/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!artifacts/.gitkeep

@@ -1,0 +1,55 @@
+run:
+  kind: smoke
+  seed: 42
+  output_root: artifacts/smoke
+  save_all_models: false
+
+data:
+  synthetic: true
+  synthetic_rows: 1200
+  start_year: 2005
+  start_month: 1
+  end_year: 2025
+  end_month: 1
+  target_threshold: 0.15
+  target_operator: gt
+  test_size: 0.20
+  temporal_train_end_year: 2023
+  temporal_test_start_year: 2024
+
+models:
+  names:
+    - random_forest
+    - extra_trees
+    - xgboost
+    - lightgbm
+    - catboost
+    - knn
+    - gaussian_nb
+    - mlp
+    - logistic_regression
+    - linear_svm
+    - stacking
+  selected: stacking
+  fast: true
+  n_jobs: 2
+  stack_folds: 3
+
+evaluation:
+  threshold: 0.5
+  calibration_bins: 8
+  bootstrap_samples: 10
+  run_temporal_arm: false
+
+optimization:
+  penalty: 2000.0
+  capacity: 0.60
+  commercial_value_low: 1000
+  commercial_value_high: 5000
+  value_seed: 42
+  mandatory_fraction: 0.05
+  mandatory_seed: 42
+  carrier_min_fraction: 0.40
+  solver_time_limit_seconds: 60
+  scenario_penalties: [1000.0, 2000.0, 3000.0]
+  scenario_capacities: [0.40, 0.60, 0.80]

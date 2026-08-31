@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "flight-delay-prediction-milp"
+version = "0.1.0"
+description = "Leakage-aware reproduction of flight-delay prediction and probability-driven MILP scheduling"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+  "catboost>=1.2.8,<2",
+  "imbalanced-learn>=0.13,<1",
+  "joblib>=1.4,<2",
+  "lightgbm>=4.6,<5",
+  "matplotlib>=3.9,<4",
+  "numpy>=1.26,<3",
+  "pandas>=2.2,<3",
+  "pulp>=2.9,<3",
+  "pyyaml>=6.0,<7",
+  "scikit-learn>=1.6,<2",
+  "seaborn>=0.13,<1",
+  "xgboost>=2.1,<4",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9",
+  "pytest-cov>=6,<8",
+  "ruff>=0.9,<1",
+]
+
+[project.scripts]
+flight-delay-milp = "flight_delay_milp.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/flight_delay_milp"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
