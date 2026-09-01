@@ -126,7 +126,9 @@ The test partition is not scored until `best_parameters.json` and
 Outer-fold, final-selection and per-model test checkpoints make the run resumable.
 Because the same held-out partition was already inspected in the baseline formal
 reproduction, this enhancement is confirmatory replication evidence, not a fresh
-independent generalization estimate.
+independent generalization estimate. The completed official-data results and integrity
+audit are in
+[docs/NESTED_TUNING_REPRODUCTION_20260901.md](docs/NESTED_TUNING_REPRODUCTION_20260901.md).
 
 ## Repository layout
 
